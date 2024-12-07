@@ -10,7 +10,6 @@ import fallbackLangData from "./locales/en.json";
 const isDevelopment = import.meta.env.DEV;
 
 const defaultLang = { code: "en", label: "English" };
-
 const languages = [
   defaultLang,
   ...[
@@ -19,18 +18,6 @@ const languages = [
     { code: "ar", label: "العربية", rtl: true },
   ],
 ];
-
-const TEST_LANG_CODE = "__test__";
-if (isDevelopment) {
-  languages.unshift(
-    { code: TEST_LANG_CODE, label: "test language" },
-    {
-      code: `${TEST_LANG_CODE}.rtl`,
-      label: "\u{202a}test language (rtl)\u{202c}",
-      rtl: true,
-    }
-  );
-}
 
 let currentLang = defaultLang;
 let currentLangData = {};
@@ -50,13 +37,6 @@ const findPartsForData = (data, parts) => {
 };
 
 export const t = (path, replacement = null, fallback = null) => {
-  if (currentLang.code.startsWith(TEST_LANG_CODE)) {
-    const name = replacement
-      ? `${path}(${JSON.stringify(replacement).slice(1, -1)})`
-      : path;
-    return `\u{202a}[[${name}]]\u{202c}`;
-  }
-
   const parts = path.split(".");
   let translation =
     findPartsForData(currentLangData, parts) ||
@@ -98,15 +78,11 @@ export const I18nProvider = ({ children }) => {
       document.documentElement.dir = currentLang.rtl ? "rtl" : "ltr";
       document.documentElement.lang = currentLang.code;
 
-      if (langCode.startsWith(TEST_LANG_CODE)) {
-        currentLangData = {};
-      } else {
-        try {
-          currentLangData = await import(`./locales/${currentLang.code}.json`);
-        } catch (error) {
-          console.error(`Failed to load language ${langCode}:`, error.message);
-          currentLangData = fallbackLangData;
-        }
+      try {
+        currentLangData = await import(`./locales/${currentLang.code}.json`);
+      } catch (error) {
+        console.error(`Failed to load language ${langCode}:`, error.message);
+        currentLangData = fallbackLangData;
       }
 
       localStorage.setItem("lang", langCode);
@@ -120,9 +96,8 @@ export const I18nProvider = ({ children }) => {
   return (
     <I18nContext.Provider
       value={{
-        t,
-        langCode: currentLang.code,
         languages,
+        langCode: currentLang.code,
         setLanguage: useCallback(
           (lang) => {
             setLangCode(lang);
