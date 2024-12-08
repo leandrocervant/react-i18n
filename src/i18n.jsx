@@ -86,7 +86,7 @@ export const I18nProvider = ({ children }) => {
       }
 
       localStorage.setItem("lang", langCode);
-
+      // a trick to rendering children after the language is updated
       setTimeout(() => setIsLoading(false), 100);
     };
 
